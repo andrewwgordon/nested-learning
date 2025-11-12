@@ -1,0 +1,11 @@
+torch
+pytest
+
+# Development / style tools
+black
+isort
+flake8
+pre-commit
+
+# Optional: include 'higher' if you later switch to that library for unrolling
+# higher
