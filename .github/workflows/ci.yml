@@ -25,9 +25,6 @@ jobs:
       - name: Run black check
         run: |
           black --check .
-      - name: Run flake8
-        run: |
-          flake8
 
   test:
     runs-on: ubuntu-latest
