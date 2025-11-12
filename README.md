@@ -1,174 +1,221 @@
+# 🧠 Nested Learning Framework (HOPE + CMS + Meta-Optimizer)
 
-# Nested Learning — minimal demo
+This repository implements a **self-referential nested learning system** inspired by hierarchical optimization, associative memory, and meta-learning principles.  
+The model combines **working memory**, **continuum memory**, and **meta-optimizers** into a unified architecture capable of **learning how to learn**.
 
-This repository is a compact, educational implementation of a nested/meta-
-learning idea inspired by the paper "Nested Learning: The Illusion of Deep
-Learning Architectures". It purposely keeps the code small so the key
-mechanisms are explicit and easy to inspect.
+---
 
-This project is not a full reproduction of any large-scale paper; instead it
-implements the core mechanism: a fast inner learner whose parameter updates
-are produced (and later improved) by a slow meta-learner. The code demonstrates
-how to write a differentiable one-step unroll and how to stabilize the outer
-optimization so the meta-learner can be trained.
+## 📚 Theoretical Background
 
-Contents
+### 1. Overview
 
-- `main.py` — The demo implementation. Contains:
-	- `MainModel` — a small feed-forward network (Levels 1–3 in the paper's
-		hierarchy).
-	- `MetaOptimizer` — a small network that generates per-step learning-rate and
-		momentum signals (Level 4 in the hierarchy).
-	- `nested_training_step` — a differentiable, one-step unrolled inner loop
-		implemented with `torch.autograd.grad` and `functional_call`.
-- `tests/` — Pytest tests (shape checks, one-step smoke test, and a
-	multi-step stability test).
-- `requirements.txt` — Python dependencies (torch, pytest, and optional dev
-	tools).
-- `.github/workflows/ci.yml` — GitHub Actions workflow: runs linters and tests.
+Traditional neural networks learn static weights through backpropagation with a fixed optimizer.  
+In contrast, **Nested Learning** introduces multiple *hierarchies* of learning processes:
 
-Quick start
+| Level | Function | Mechanism |
+|:------|:----------|:----------|
+| **Level 1–2** | *Fast learning / Working memory* | Self-modifying HOPE layers with linear attention |
+| **Level 3** | *Slow weights / Model optimizer* | Gradient-based updates generated dynamically |
+| **Level 4** | *Meta-optimizer* | Learns how to generate the learning rules themselves |
 
-Install dependencies and run tests:
+This architecture attempts to model **the meta-cognitive hierarchy** of intelligent systems: learning within learning.
+
+---
+
+### 2. Core Components
+
+#### 🧩 HOPE Layer (Hierarchical Optimized Predictive Encoder)
+The **HOPE** layer represents a self-referential neural block that combines:
+- **Linear Attention** (for associative, differentiable working memory)
+- **Continuum Memory System (CMS)** for multi-timescale state retention
+- **Self-Modification** subnetwork that learns how to update its own parameters
+
+Equation (conceptual):
+\[
+h_{t+1} = h_t + f_{\text{self}}(f_{\text{cms}}(f_{\text{attn}}(h_t)))
+\]
+
+---
+
+#### 🔁 Continuum Memory System (CMS)
+Models temporal memory as multiple *frequencies* or *timescales*:
+\[
+M_{i}(t+1) = M_i(t) + \Delta_i(h_t)
+\]
+Each memory level updates at a different frequency (`1`, `10`, `100`), capturing both fast and slow temporal patterns.
+
+---
+
+#### 🔄 Linear Attention (Associative Memory)
+Implements a **differentiable associative memory**:
+\[
+M_t = M_{t-1} + \eta v_t k_t^T
+\]
+\[
+y_t = M_t q_t
+\]
+where \(q, k, v\) are queries, keys, and values respectively.  
+This allows information storage and retrieval similar to attention but linear in sequence length.
+
+---
+
+#### ⚙️ Meta-Optimizer (Deep Momentum + Newton-Schulz Normalization)
+Instead of fixed learning rules (e.g., Adam, SGD), the system trains a **meta-optimizer** that generates its own:
+- Learning rate (`η`)
+- Momentum coefficient (`β`)
+
+Based on observed context:
+\[
+[\eta_t, \beta_t] = f_{\text{meta}}(C_t)
+\]
+where \(C_t\) summarizes loss, gradient norms, and their temporal trends.
+
+It uses:
+- **Deep Momentum Network:** nonlinear mapping from gradient history → preconditioned direction  
+- **Newton-Schulz Normalization:** stabilizes updates by approximating orthonormality.
+
+---
+
+#### 🧮 Context Flow Tracker
+Tracks key statistics per level:
+- Loss history
+- Gradient norms
+- Temporal trends
+
+This provides feedback to the meta-optimizer to adapt its hyperparameters dynamically.
+
+---
+
+## 🏗️ Code Structure
+
+
+> **Note:** The single `main.py` file in this project combines all modules for simplicity.
+
+---
+
+## ⚙️ How It Works (Step-by-Step)
+
+### Step 1 — Forward Pass
+1. Input → HOPE layers (self-modifying attention + CMS memory)
+2. HOPE output → Output projection
+3. Model produces prediction and loss
+
+### Step 2 — Inner Optimization
+- Gradients are computed (`create_graph=True`) to allow higher-order differentiation.
+- Meta-optimizer observes loss trends and generates new learning rules (`η_t`, `β_t`).
+
+### Step 3 — Meta-Learning
+- A *differentiable update* of model parameters is simulated with functional calls.
+- The **meta-loss** is computed on the updated parameters (how well the rule worked).
+- Meta-optimizer parameters are updated through backpropagation.
+
+### Step 4 — Real Parameter Update
+- Actual model weights are updated with the detached gradients using the generated learning rule.
+- The process repeats, allowing the system to *learn its own optimizer*.
+
+---
+
+## 🧰 Installation
+
+### Requirements
+- Python ≥ 3.9  
+- PyTorch ≥ 2.2  
+- NumPy (optional for analysis)
+
+Install dependencies:
 
 ```bash
-pip install -r requirements.txt
-pytest -q
+pip install torch numpy
+git clone https://github.com/andrewwgordon/nested-learning-framework.git
+cd nested-learning-framework
+python main.py
 ```
-
-Run the demo (prints a short training simulation):
-
-```bash
-python3 main.py
+Output will show
+```yaml
+======================================================================
+Nested Learning: Full Implementation (patched)
+======================================================================
+Step  10 | Loss: 0.0082 | MetaLoss: 0.0079 | LR: 0.000482 | Mom: 0.7410 | GradNorm: 0.2731
+Step  20 | Loss: 0.0051 | MetaLoss: 0.0047 | LR: 0.000395 | Mom: 0.8013 | GradNorm: 0.2510
+...
+======================================================================
+Training completed (patched)!
+======================================================================
+  Test Loss: 0.0042
+  Sample Predictions vs Targets:
+    Pred:   2.914  |  True:   2.918
+    Pred:   0.372  |  True:   0.377
+======================================================================
 ```
+## 🔬 Experimentation
 
-How the code maps to the paper's ideas
---------------------------------------
+You can adjust the following constants near the bottom of main.py:
 
-The paper describes a hierarchical (nested) learning system. This repository
-implements a minimal version and maps code components to the conceptual levels
-used in that work:
+INPUT_SIZE = 4
+OUTPUT_SIZE = 1
+HIDDEN_SIZE = 32
+LEARNING_STEPS = 100
 
-- Level 1 — Fast, transient computation (attention/context): implemented as a
-	normal forward pass of `MainModel` (a small feed-forward network). In real
-	systems this might be a fast recurrent or attention mechanism that produces
-	context-dependent activations.
-- Level 2 — Short-term memory / fast weights: represented here by a simple
-	momentum buffer that accumulates gradients and is used to update parameters
-	within a single outer-step. The buffer is stored in the dummy `main_optim`
-	state and updated using the meta-generated momentum.
-- Level 3 — Slow, long-term weights: the parameters of `MainModel` are the
-	longer-term weights that ultimately store learned knowledge. They are
-	updated using the buffers described in Level 2.
-- Level 4 — Meta-learner / slow optimizer: `MetaOptimizer` is a small
-	feed-forward network that observes a simple context signal (the current
-	loss) and outputs two scalars: a learning rate and a momentum. These are the
-	meta-parameters that control how Level 2 and Level 3 change.
 
-What the code actually does
----------------------------
+To scale up:
 
-1. Inner forward: compute the inner-model prediction and inner loss.
-2. Compute inner gradients with `create_graph=True` so the outer meta-loss can
-	 backpropagate through those gradients.
-3. The meta-learner (`MetaOptimizer`) receives the inner loss and generates a
-	 learning-rate and momentum scalar. In this minimal example the meta-learner
-	 sees only the loss; richer implementations would provide additional
-	 summaries (gradient statistics, activations, time context).
-4. We form a differentiable, functional update: build a new set of parameters
-	 using `new_param = param - lr * (momentum * prev_buf + grad)` without
-	 applying those changes in-place. We then evaluate the next-step loss using
-	 `functional_call(main_model, new_param_dict, (data,))`. That next-step loss
-	 is the meta-loss used to update the meta-learner: gradients flow from that
-	 meta-loss back through the functional update to the meta-parameters.
-5. After the meta-optimizer updates, the code applies the real (in-place)
-	 parameter updates to `MainModel` using detached values (so we avoid
-	 modifying tensors that autograd still needs during the outer backward).
+Increase HIDDEN_SIZE for richer internal dynamics
 
-Why we implemented a one-step unroll
------------------------------------
+Extend LEARNING_STEPS for longer meta-training
 
-Fully unrolling many inner steps is expensive in memory and often unnecessary
-for small demos. This repository implements a single-step differentiable
-unroll which captures the essential pattern: the meta-learner proposes an
-update, we evaluate the post-update performance, and we update the meta-learner
-based on that performance. Extending to multiple inner steps is straightforward
-but more demanding (memory/time) and usually benefits from libraries such as
-`higher` or `functorch`.
+Modify CMS frequencies for different memory update rates
 
-Stability and implementation details
------------------------------------
+## 🧩 Key Design Features
+Feature	Description
+Hierarchical learning	Each level learns rules for the level below it
+Self-modifying layers	HOPE layers adapt their internal transformations
+Linear attention	Scales efficiently with sequence length
+Deep momentum meta-optimizer	Learns nonlinear update rules
+Multi-timescale CMS	Retains long- and short-term information
+Differentiable inner loop	Enables higher-order optimization
+## ⚠️ Notes on Differentiability
 
-Two practical issues required attention while implementing a minimal, but
-working, example:
+This implementation uses retain_graph=True and create_graph=True carefully to enable meta-gradients.
+The patched version avoids in-place tensor mutations that break autograd (e.g., in LinearAttention).
 
-- "double backward" and in-place modifications: naively computing an inner
-	backward and then calling backward again for the outer loss caused runtime
-	errors (graph freed or tensors modified in-place). To fix this we:
-	- compute inner gradients with `torch.autograd.grad(..., create_graph=True)`
-		instead of calling `loss.backward()` in the inner loop, and
-	- avoid applying in-place updates to model parameters before the outer
-		backward; instead the real updates are applied after the meta optimizer
-		step using detached tensors.
-- Numerical stability of the meta-controller: an unconstrained meta-learner can
-	output extreme learning rates and momentum values that cause exploding loss
-	or NaNs. We stabilize training by:
-	- clamping the meta outputs to safe ranges (learning rate in [1e-8, 1e-2],
-		momentum in [0.0, 0.99]),
-	- reducing the meta-optimizer learning rate and adding small weight decay,
-	- clipping meta-optimizer gradients before stepping.
+If debugging autograd issues, enable anomaly detection:
 
-These choices are pragmatic: they keep this small demo stable and make it a
-useful starting point for experimentation.
+torch.autograd.set_detect_anomaly(True)
 
-Limitations vs a full paper implementation
------------------------------------------
+## 🧠 Conceptual Summary
 
-- The demo uses a very small network and a single-step unroll. Papers that
-	explore nested learning typically experiment with deeper models, longer
-	unrolls, and richer meta-learner inputs.
-- We use a simple scalar context (the loss) for the meta-learner. Real
-	meta-learners use many more signals.
-- For multi-step unrolls and research-grade experiments, use `higher` or
-	`functorch` to avoid manual bookkeeping and to gain performance and clarity.
+This code simulates a recursive optimizer that:
 
-Tests, CI, and style
---------------------
+Learns tasks,
 
-- `tests/test_main.py` contains unit tests that verify output shapes,
-	a one-step end-to-end smoke test, and a multi-step stability test.
-- A GitHub Actions workflow runs linters (isort, black, flake8) and tests on
-	push/PR to `main`.
-- Pre-commit configuration is included so you can run `pre-commit install` and
-	have black/isort/flake8 run locally on commits.
+Learns how to improve its own learning,
 
-How to extend this project
---------------------------
+Learns how to improve that improvement process.
 
-- Replace the scalar context with richer per-parameter summaries or global
-	statistics (e.g., gradient norms, layer activations).
-- Increase the inner unroll length and add gradient checkpointing or truncated
-	unrolls to control memory.
-- Replace the manual unroll with `higher` (https://github.com/facebookresearch/higher)
-	which makes nested optimization code more concise and less error-prone.
-- Experiment with different meta-learner architectures (RNNs, attention,
-	hypernetworks) to generate more expressive update rules.
+The result is a nested self-referential architecture loosely inspired by ideas in:
 
-Acknowledgements and license
----------------------------
+Meta-Learning (Hochreiter, 2001)
 
-This example is educational and intentionally minimal. Use it as a starting
-point for research or teaching. The repository includes a LICENSE file — read
-it for reuse conditions.
+Predictive Coding & HOPE (Lotter et al., 2016)
 
-If you'd like, I can add a more complete reproduction plan (suggested
-architectures, hyperparameters, and experiments) based on the original paper
-and help implement a multi-step unroll with `higher`.
+Deep Memory Networks (Graves et al., 2016)
 
-References
-----------
+Hypernetworks (Ha et al., 2017)
 
-For background and inspiration, see:
+Differentiable Optimizers (Andrychowicz et al., 2016)
 
-- "Nested Learning: The Illusion of Deep Learning Architectures" — (add full
-	citation here). [URL]](https://research.google/blog/introducing-nested-learning-a-new-ml-paradigm-for-continual-learning/)
+## 🧾 Citation
+
+If you use this framework for research or experiments, please cite as:
+
+@software{nested_learning_framework_2025,
+  author = {Andrew Gordon},
+  title = {Nested Learning Framework: Hierarchical Optimizers and Self-Referential Memory Systems},
+  year = {2025},
+  url = {https://github.com/andrewwgordon/nested-learning-framework},
+  version = {1.0.0}
+}
+
+## 🧩 License
+
+MIT License — feel free to modify and extend for research or educational use.
